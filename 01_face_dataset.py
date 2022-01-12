@@ -42,7 +42,7 @@ def main():
             k = cv2.waitKey(100) & 0xff   # ESCキーで停止
             if k == 27:
                 break
-            elif count >= 30:   # 30枚撮影したら終了
+            elif count >= 100:   # 100枚撮影したら終了
                 break
             
         except:

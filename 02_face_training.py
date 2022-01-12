@@ -30,7 +30,7 @@ def get_images_and_labels(path):
 
 def main():
 
-    path = './dataset'  # 学習用の写真が格納されているディレクトリ
+    path = 'dataset'  # 学習用の写真が格納されているディレクトリ
     recognizer = cv2.face.LBPHFaceRecognizer_create()
 
     print ("\n [INFO] 顔を学習しています...")
