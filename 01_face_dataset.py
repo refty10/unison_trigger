@@ -8,7 +8,7 @@ def main():
     cam.set(4, 480)  # 高さの指定
 
     # 顔認識用特徴量ファイルの読み込み
-    face_detector = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+    face_detector = cv2.CascadeClassifier('./data/haarcascade_frontalface_default.xml')
 
     # 画像保存用のディレクトリが存在しない場合は作成
     if not os.path.exists('dataset'):

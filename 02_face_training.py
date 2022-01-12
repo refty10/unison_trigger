@@ -7,7 +7,7 @@ import os
 def get_images_and_labels(path):
 
     # 顔認識用特徴量ファイルの読み込み
-    detector = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
+    detector = cv2.CascadeClassifier("./data/haarcascade_frontalface_default.xml")
 
     image_paths = [os.path.join(path,f) for f in os.listdir(path)]   # 写真のpathのリストを作成
     face_samples = []
