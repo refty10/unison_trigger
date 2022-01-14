@@ -1,43 +1,44 @@
 import cv2
 import numpy as np
-from PIL import Image
 import os
+from mtcnn import MTCNN
 
 
 def get_images_and_labels(path):
 
-    # 顔認識用特徴量ファイルの読み込み
-    detector = cv2.CascadeClassifier("./data/haarcascade_frontalface_default.xml")
+    # MTCNN
+    mtcnn_detector = MTCNN()
 
     image_paths = [os.path.join(path,f) for f in os.listdir(path)]   # 写真のpathのリストを作成
     face_samples = []
     ids = []
 
     for image_path in image_paths:
-
-        PIL_img = Image.open(image_path).convert('L')   # 画像を読み込み，グレースケールに変換
-        img_numpy = np.array(PIL_img,'uint8')
+        img = cv2.imread(image_path)   # 画像を読み込み
+        rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)     # BGRからRGBに変換
+        gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)   # BGRからグレースケールに変換
+        mtcnn_dets = mtcnn_detector.detect_faces(rgb_img)  # MTCNN顔検出
 
         id = int(os.path.split(image_path)[-1].split(".")[1])
-        faces = detector.detectMultiScale(img_numpy)
 
-        for (x,y,w,h) in faces:
-            face_samples.append(img_numpy[y:y+h,x:x+w])
+        for face in mtcnn_dets:
+            x, y, w, h = face['box']
+            face_samples.append(gray_img[y:y + h, x:x + w])
             ids.append(id)
 
     return face_samples,ids
 
 
 def main():
-
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # TensorFlowのログを抑制
     path = 'dataset'  # 学習用の写真が格納されているディレクトリ
     recognizer = cv2.face.LBPHFaceRecognizer_create()
 
     print ("\n [INFO] 顔を学習しています...")
-    faces,ids = get_images_and_labels(path)
+    faces, ids = get_images_and_labels(path)
     recognizer.train(faces, np.array(ids))
 
-    # モデ保存用のディレクトリが存在しない場合は作成
+    # モデル保存用のディレクトリが存在しない場合は作成
     if not os.path.exists('trainer'):
         os.makedirs('trainer')
 
