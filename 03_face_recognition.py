@@ -64,8 +64,15 @@ def main():
             cv2.imshow('Change_Rate_img', change_rate_img)
 
             print(unknown_count)
-            if unknown_count > 3:
+            # 知らない顔を3回以上認識かつ画像に変化がなければ消す
+            if unknown_count > 3 and change_rate <= 0.5:
                 mc.sleep()
+
+            # なにか動いてるものがあるときつけとく
+            elif change_rate > 0.5:
+                mc.wake_up()
+
+            # それ以外はとりあえずつけとく
             else:
                 mc.wake_up()
 
