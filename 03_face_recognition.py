@@ -1,13 +1,19 @@
 import cv2
 import time
+import os
 from monitor_ctl import MonitorCtl
+from mtcnn import MTCNN
+from difference_area import calc_amount_of_area
 
 
 def main():
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # TensorFlowのログを抑制
+
     recognizer = cv2.face.LBPHFaceRecognizer_create()
     recognizer.read('trainer/trainer.yml')   # 学習したモデルデータのパス
-    cascade_path = './data/haarcascade_frontalface_default.xml'   # 顔認識用特徴量ファイルのパス
-    face_cascade = cv2.CascadeClassifier(cascade_path)
+
+    # MTCNN
+    mtcnn_detector = MTCNN()
 
     # フォントの指定
     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -29,28 +35,52 @@ def main():
     mc = MonitorCtl()
     unknown_count = 0
 
+    # 変化量の計算用
+    avg = None
+    loop_count = 0
+
     while True:
+        # 開始直後はおかしな画像が入るので無視する
+        if loop_count <= 5:
+            loop_count += 1
+            continue
+
         try:
             ret, img = cam.read()
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            faces = face_cascade.detectMultiScale(
-                gray,
-                scaleFactor=1.2,
-                minNeighbors=5,
-                minSize=(int(minW), int(minH)),
-            )
+            gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)   # グレースケールに変換
+            rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)     # BGRからRGBに変換
+            mtcnn_dets = mtcnn_detector.detect_faces(rgb_img)  # MTCNN顔検出
+
+            # 前フレームを保存
+            if avg is None:
+                avg = gray_img.copy().astype("float")
+                continue
+
+            # 変化量を計算
+            change_rate_img, change_rate = calc_amount_of_area(gray_img, avg)
+            print(f'Change_Rate = {change_rate}%')
+
+            # リアルタイムに差分領域を表示
+            cv2.imshow('Change_Rate_img', change_rate_img)
 
             print(unknown_count)
-            if unknown_count > 3:
+            # 知らない顔を3回以上認識かつ画像に変化がなければ消す
+            if unknown_count > 3 and change_rate <= 0.5:
                 mc.sleep()
+
+            # なにか動いてるものがあるときつけとく
+            elif change_rate > 0.5:
+                mc.wake_up()
+
+            # それ以外はとりあえずつけとく
             else:
                 mc.wake_up()
 
-            for(x, y, w, h) in faces:
-
+            for face in mtcnn_dets:
+                x, y, w, h = face['box']
                 cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
 
-                face_id, confidence = recognizer.predict(gray[y:y+h, x:x+w])
+                face_id, confidence = recognizer.predict(gray_img[y:y+h, x:x+w])
 
                 # 信頼度が100未満かどうかを確認==>「0」の場合は完全に一致
                 if (round(100 - confidence) > 55):
@@ -68,7 +98,7 @@ def main():
                 cv2.putText(img, str(confidence), (x+5, y+h-5),
                             font, 1, (255, 255, 0), 1)
 
-            # cv2.imshow('camera', img)
+            cv2.imshow('camera', img)
 
             k = cv2.waitKey(10) & 0xff   # ESCキーで終了
             if k == 27:
