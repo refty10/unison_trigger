@@ -65,7 +65,7 @@ def main():
 
             print(unknown_count)
             # 知らない顔を3回以上認識かつ画像に変化がなければ消す
-            if unknown_count > 3 and change_rate <= 0.5:
+            if unknown_count > 3 and change_rate <= 2:
                 mc.sleep()
 
             # なにか動いてるものがあるときつけとく
@@ -83,7 +83,7 @@ def main():
                 face_id, confidence = recognizer.predict(gray_img[y:y+h, x:x+w])
 
                 # 信頼度が100未満かどうかを確認==>「0」の場合は完全に一致
-                if (round(100 - confidence) > 55):
+                if (round(100 - confidence) > 50):
                     unknown_count = 0
                     face_id = names[face_id]
                     confidence = "  {0}%".format(round(100 - confidence))
@@ -107,7 +107,7 @@ def main():
         except:
             pass
 
-        time.sleep(0.5)
+        time.sleep(0.1)
 
     # カメラの後始末
     cam.release()

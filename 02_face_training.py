@@ -14,17 +14,19 @@ def get_images_and_labels(path):
     ids = []
 
     for image_path in image_paths:
-        img = cv2.imread(image_path)   # 画像を読み込み
-        rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)     # BGRからRGBに変換
-        gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)   # BGRからグレースケールに変換
-        mtcnn_dets = mtcnn_detector.detect_faces(rgb_img)  # MTCNN顔検出
+        # 写真を読み込み
+        if image_path.endswith('.jpg') or image_path.endswith('.png'):
+            img = cv2.imread(image_path)   # 画像を読み込み
+            rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)     # BGRからRGBに変換
+            gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)   # BGRからグレースケールに変換
+            mtcnn_dets = mtcnn_detector.detect_faces(rgb_img)  # MTCNN顔検出
 
-        id = int(os.path.split(image_path)[-1].split(".")[1])
+            id = int(os.path.split(image_path)[-1].split(".")[1])
 
-        for face in mtcnn_dets:
-            x, y, w, h = face['box']
-            face_samples.append(gray_img[y:y + h, x:x + w])
-            ids.append(id)
+            for face in mtcnn_dets:
+                x, y, w, h = face['box']
+                face_samples.append(gray_img[y:y + h, x:x + w])
+                ids.append(id)
 
     return face_samples,ids
 
